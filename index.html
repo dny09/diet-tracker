@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Daily Tracker</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Auth/Registration Screen -->
+    <div class="auth-container" id="authContainer">
+        <div class="auth-card">
+            <div class="auth-icon">🥗</div>
+            <h2>Bienvenido</h2>
+            <p>Crea tu perfil local para comenzar tu seguimiento diario de forma privada.</p>
+            
+            <div class="form-group">
+                <label for="regName">¿Cómo te llamas?</label>
+                <input type="text" id="regName" placeholder="Tu nombre" autocomplete="off">
+            </div>
+            
+            <div class="form-group">
+                <label for="regWeight">Peso Actual (kg)</label>
+                <input type="number" id="regWeight" placeholder="Ej: 130" step="0.1">
+            </div>
+            
+            <button id="registerBtn" class="btn-primary">Comenzar mi plan</button>
+        </div>
+    </div>
+
+    <!-- History Container -->
+    <div class="app-container" id="historyContainer" style="display: none;">
+        <header class="top-bar">
+            <div>
+                <h1 class="date-display" id="historyGreeting">Historial</h1>
+                <p class="streak-display">Registros por día/mes/año</p>
+            </div>
+            <div class="profile-pic" id="historyProfilePic">D</div>
+        </header>
+        
+        <div class="history-list" id="historyList">
+            <!-- Render history cards here via JS -->
+        </div>
+        
+        <button id="newDayBtn" class="btn-primary" style="margin-top: auto;">+ Ver/Registrar Hoy</button>
+    </div>
+
+    <!-- Main Tracker App Screen -->
+    <div class="app-container" id="appContainer" style="display: none;">
+        <!-- Header -->
+        <header class="top-bar">
+            <div>
+                <button id="backToHistoryBtn" class="back-btn">← Volver al Historial</button>
+                <h1 class="date-display" id="dateDisplay" style="margin-top: 8px;">Hoy</h1>
+                <p class="streak-display">🔥 Racha: <span id="streakCount">0</span> días</p>
+            </div>
+        </header>
+
+        <!-- Navigation Tabs -->
+        <div class="tabs-container">
+            <button class="tab-btn active" id="tabMeals">🍎 Alimentación</button>
+            <button class="tab-btn" id="tabExercise">🏃 Ejercicio</button>
+            <button class="tab-btn" id="tabProgress">📈 Progreso</button>
+        </div>
+
+        <!-- Meals View -->
+        <div id="mealsView">
+            <section class="progress-section">
+                <div class="calories-info">
+                    <div class="cal-consumed">
+                        <span id="calsConsumed">0</span>
+                        <small>Consumidas</small>
+                    </div>
+                    <div class="cal-goal">
+                        <span id="calsGoal">2000</span>
+                        <small>Meta Ideal</small>
+                    </div>
+                </div>
+                <div class="progress-bar-bg">
+                    <div class="progress-bar-fill" id="progressBar"></div>
+                </div>
+                <p class="cal-remaining" id="calsRemainingMsg">Faltan 2000 kcal</p>
+            </section>
+
+            <!-- Meals List -->
+            <section class="meals-list" id="mealsList">
+                <!-- Meal templates rendered via JS -->
+            </section>
+        </div>
+
+        <!-- Exercise View -->
+        <div id="exerciseView" style="display: none;">
+            <section class="progress-section" style="text-align: center; margin-bottom: 20px;">
+                <h2>Energía Quemada 🔥</h2>
+                <div class="burned-display">-<span id="totalBurnedDisplay">0</span> kcal</div>
+                <p style="color: var(--text-sec); font-size: 14px;">Tus actividades físicas de hoy</p>
+            </section>
+            
+            <div style="display: flex; gap: 12px; margin-bottom: 20px;">
+                <button id="aiExerciseBtn" class="btn-primary" style="flex: 1; font-size: 14px; padding: 12px;">✨ Registro con IA</button>
+                <button id="manualExBtn" class="btn-secondary" style="flex: 1; font-size: 14px; padding: 12px;">✍️ Registro Manual</button>
+            </div>
+            
+            <section class="meals-list" id="exerciseList">
+                <!-- Exercises rendered via JS -->
+            </section>
+        </div>
+
+        <!-- Progress View -->
+        <div id="progressView" style="display: none;">
+            <section class="weight-section" style="margin-top: 0;">
+                <h2>Corte Semanal ⚖️</h2>
+                <p style="color: var(--text-sec); font-size: 14px; margin-bottom: 24px; line-height: 1.5;">Registra tu evolución física una vez a la semana (preferentemente los domingos por la noche).</p>
+                
+                <div class="form-group" style="margin-bottom: 16px;">
+                    <label>Peso Corporal (kg)</label>
+                    <input type="number" id="weightInput" placeholder="Ej: 129.5" step="0.1" style="margin-bottom: 0;">
+                </div>
+                
+                <div class="form-group" style="margin-bottom: 24px;">
+                    <label>Cintura (cm) - Opcional</label>
+                    <input type="number" id="waistInput" placeholder="Ej: 110" step="1" style="margin-bottom: 0;">
+                </div>
+                
+                <button id="saveWeightBtn" class="btn-primary" style="margin-bottom: 30px;">Guardar Registro</button>
+
+                <div class="chart-container" style="height: 280px;">
+                    <canvas id="weightChart"></canvas>
+                </div>
+            </section>
+        </div>
+
+        <!-- Snack Warning Modal -->
+        <div class="modal" id="snackWarningModal">
+            <div class="modal-content">
+                <div class="modal-icon">⚠️</div>
+                <h3>¡Atención con el Snack!</h3>
+                <p>Las porciones de snacks son guías calóricas cerradas. Evita consumir múltiples porciones para no exceder tus calorías del plan.</p>
+                <button id="closeModalBtn" class="btn-primary">Entendido</button>
+            </div>
+        </div>
+
+        <!-- Manual Exercise Modal -->
+        <div class="modal" id="manualExModal">
+            <div class="modal-content">
+                <div class="modal-icon">⌚</div>
+                <h3>Registro Manual</h3>
+                <p style="color: var(--text-sec); font-size: 15px; margin-bottom: 20px;">Ingresa la actividad y las calorías exactas que quemaste.</p>
+                
+                <div class="form-group" style="margin-bottom: 12px;">
+                    <input type="text" id="manualExDesc" placeholder="Detalle (Ej: Caminata 4k)" style="margin-bottom: 0;">
+                </div>
+                <div class="form-group" style="margin-bottom: 20px;">
+                    <input type="number" id="manualExKcal" placeholder="Kcal quemadas (Ej: 320)" style="margin-bottom: 0;">
+                </div>
+                
+                <div class="modal-buttons">
+                    <button id="manualExCancelBtn" class="btn-secondary">Cancelar</button>
+                    <button id="manualExSubmitBtn" class="btn-primary">Guardar</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- AI Input Modal -->
+        <div class="modal" id="aiModal">
+            <div class="modal-content">
+                <div class="modal-icon">✨</div>
+                <h3 id="aiModalTitle">Registro Inteligente</h3>
+                <p id="aiModalDesc">Escribe qué actividad o comida realizaste y ChatGPT la evaluará.</p>
+                <textarea id="aiInput" placeholder="Ej: Me comí 2 tamales o Caminé 30 minutos..." rows="4" style="width:100%; background:rgba(0,0,0,0.3); border:1px solid var(--card-border); color:white; padding:12px; border-radius:12px; margin-bottom:12px; font-family:inherit;"></textarea>
+                <div id="aiLoading" class="ai-loading">Analizando con ChatGPT... ⏳</div>
+                <div class="modal-buttons">
+                    <button id="aiCancelBtn" class="btn-secondary">Cancelar</button>
+                    <button id="aiSubmitBtn" class="btn-primary">Calcular Kcal</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
