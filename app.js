@@ -1,3 +1,24 @@
+// Firebase Configuration (TO BE FILLED BY USER)
+const firebaseConfig = {
+    apiKey: "AIzaSyBmOHtPRRYgktRtAYjpMCmHDJcm3jm-Dpw",
+    authDomain: "diet-tracker-4abee.firebaseapp.com",
+    projectId: "diet-tracker-4abee",
+    storageBucket: "diet-tracker-4abee.firebasestorage.app",
+    messagingSenderId: "143464950808",
+    appId: "1:143464950808:web:c3bb032c26e54e5691676d",
+    measurementId: "G-N3JZH635CE"
+};
+
+// OpenAI Configuration (User Provided Key)
+const OPENAI_API_KEY = "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";
+
+// Initialize Firebase (Compat Mode)
+console.log("Iniciando Firebase (Compat)...");
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+const googleProvider = new firebase.auth.GoogleAuthProvider();
+
 // Food tracking definitions
 const INGREDIENT_OPTIONS = {
     protein: {
@@ -139,12 +160,62 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function initAuth() {
+    console.log("Configurando Auth Listener...");
+    
+    // Firebase Auth State Listener
+    auth.onAuthStateChanged((user) => {
+        console.log("Estado de Auth cambiado:", user ? "Conectado" : "Desconectado");
+        if (user) {
+            // User is signed in
+            appState.user = { 
+                uid: user.uid,
+                name: user.displayName, 
+                email: user.email,
+                photoURL: user.photoURL 
+            };
+            
+            // Sync with Firestore
+            syncFromCloud().then(() => {
+                launchHistory();
+            });
+        } else {
+            // User is signed out
+            appState.user = null;
+            document.getElementById('authContainer').style.display = 'flex';
+            document.getElementById('historyContainer').style.display = 'none';
+            document.getElementById('appContainer').style.display = 'none';
+        }
+    });
+
+    // Google Login Handler
+    document.getElementById('googleLoginBtn').addEventListener('click', async () => {
+        try {
+            console.log("Iniciando Login con Google...");
+            await auth.signInWithPopup(googleProvider);
+        } catch (error) {
+            console.error("Error signing in with Google:", error);
+            alert("No se pudo iniciar sesión con Google.\n\nError: " + error.code + "\n\n" + error.message);
+        }
+    });
+
     const savedUser = localStorage.getItem('dt_user');
     if (savedUser) {
         appState.user = JSON.parse(savedUser);
         document.getElementById('regName').value = appState.user.name || '';
         document.getElementById('regWeight').value = appState.user.initialWeight || '';
     }
+
+    document.getElementById('logoutBtn').addEventListener('click', async () => {
+        if (confirm("¿Estás seguro de que deseas cerrar sesión?")) {
+            try {
+                await auth.signOut();
+                localStorage.clear(); // Optional: clear local too on logout
+                location.reload();
+            } catch (error) {
+                console.error("Error signing out:", error);
+            }
+        }
+    });
 
     document.getElementById('registerBtn').addEventListener('click', () => {
         const name = document.getElementById('regName').value.trim();
@@ -258,6 +329,32 @@ function switchTab(tab) {
     }
 }
 
+async function syncFromCloud() {
+    if (!appState.user) return;
+    
+    console.log("Sincronizando desde la nube...");
+    const userDocRef = db.collection("users").doc(appState.user.uid);
+    const docSnap = await userDocRef.get();
+    
+    if (docSnap.exists) {
+        const cloudData = docSnap.data();
+        appState.history = cloudData.history || {};
+        appState.exercises = cloudData.exercises || {};
+        appState.weightLog = cloudData.weightLog || [];
+        appState.streak = cloudData.streak || 0;
+        appState.lastCompletedDate = cloudData.lastCompletedDate || null;
+        
+        // Map any legacy user profile info if missing
+        if (cloudData.profile) {
+            appState.user.initialWeight = cloudData.profile.initialWeight;
+        }
+    } else {
+        // First time cloud user? Try to migrate local data if any
+        loadGlobalState();
+        await saveGlobalState(); // Push local to cloud
+    }
+}
+
 function loadGlobalState() {
     const savedWeightLog = localStorage.getItem('dt_weightLog');
     if (savedWeightLog) appState.weightLog = JSON.parse(savedWeightLog);
@@ -283,12 +380,34 @@ function loadGlobalState() {
     if (exerciseStr) appState.exercises = JSON.parse(exerciseStr);
 }
 
-function saveGlobalState() {
+async function saveGlobalState() {
+    // Local backup
     localStorage.setItem('dt_history', JSON.stringify(appState.history));
     localStorage.setItem('dt_exercises', JSON.stringify(appState.exercises));
     localStorage.setItem('dt_weightLog', JSON.stringify(appState.weightLog));
     localStorage.setItem('dt_streak', appState.streak);
     if (appState.lastCompletedDate) localStorage.setItem('dt_lastCompletedDate', appState.lastCompletedDate);
+
+    // Cloud Sync
+    if (appState.user && appState.user.uid) {
+        try {
+            const userDocRef = db.collection("users").doc(appState.user.uid);
+            await userDocRef.set({
+                history: appState.history,
+                exercises: appState.exercises,
+                weightLog: appState.weightLog,
+                streak: appState.streak,
+                lastCompletedDate: appState.lastCompletedDate,
+                profile: {
+                    name: appState.user.name,
+                    initialWeight: appState.user.initialWeight || (appState.weightLog[0] ? appState.weightLog[0].weight : 0)
+                },
+                updatedAt: new Date().toISOString()
+            }, { merge: true });
+        } catch (e) {
+            console.error("Error saving to cloud:", e);
+        }
+    }
 }
 
 function ensureTodayInHistory() {
@@ -699,16 +818,11 @@ function checkStreakUpdate() {
 
 // AI Integration Code
 async function analyzeWithAI(text, contextId) {
-    let apiKey = localStorage.getItem('dt_openai_key');
+    const apiKey = OPENAI_API_KEY;
     
     if (!apiKey || apiKey.length < 10) {
-        apiKey = prompt("Por favor ingresa tu API Key de OpenAI para usar las funciones de IA (solo se pedirá una vez):");
-        if (apiKey && apiKey.length > 20) {
-            localStorage.setItem('dt_openai_key', apiKey);
-        } else {
-            alert("No se ingresó una API Key válida. Proceso cancelado.");
-            return;
-        }
+        console.error("No se ha configurado una API Key de OpenAI válida.");
+        return;
     }
 
     const loader = document.getElementById('aiLoading');

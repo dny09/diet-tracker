@@ -6,6 +6,13 @@
     <title>Daily Tracker</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
+    
+    <!-- Firebase Compat SDK (Universal support) -->
+    <script src="https://www.gstatic.com/firebasejs/11.0.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.0.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore-compat.js"></script>
+
+    <script>console.log("HTML cargado, Firebase Scripts inyectados...");</script>
 </head>
 <body>
     <!-- Auth/Registration Screen -->
@@ -26,6 +33,15 @@
             </div>
             
             <button id="registerBtn" class="btn-primary">Comenzar mi plan</button>
+
+            <div class="auth-divider">
+                <span>o también</span>
+            </div>
+
+            <button id="googleLoginBtn" class="btn-google">
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google icon">
+                Continuar con Google
+            </button>
         </div>
     </div>
 
@@ -36,7 +52,10 @@
                 <h1 class="date-display" id="historyGreeting">Historial</h1>
                 <p class="streak-display">Registros por día/mes/año</p>
             </div>
-            <div class="profile-pic" id="historyProfilePic">D</div>
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <button id="logoutBtn" class="btn-logout" title="Cerrar Sesión">Logout 🚪</button>
+                <div class="profile-pic" id="historyProfilePic">D</div>
+            </div>
         </header>
         
         <div class="history-list" id="historyList">
