@@ -208,8 +208,12 @@ function initAuth() {
     document.getElementById('logoutBtn').addEventListener('click', async () => {
         if (confirm("¿Estás seguro de que deseas cerrar sesión?")) {
             try {
+                // Remove user-specific session data but KEEP the OpenAI API Key
+                localStorage.removeItem('dt_user');
+                localStorage.removeItem('dt_weightLog');
+                localStorage.removeItem('dt_history');
+                
                 await auth.signOut();
-                localStorage.clear(); // Optional: clear local too on logout
                 location.reload();
             } catch (error) {
                 console.error("Error signing out:", error);
