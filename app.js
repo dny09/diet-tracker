@@ -9,8 +9,8 @@ const firebaseConfig = {
     measurementId: "G-N3JZH635CE"
 };
 
-// OpenAI Configuration (User Provided Key)
-const OPENAI_API_KEY = "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";
+// OpenAI Configuration (Will be stored only in User's Browser for Security)
+let OPENAI_API_KEY = localStorage.getItem('dt_openai_key') || "";
 
 // Initialize Firebase (Compat Mode)
 console.log("Iniciando Firebase (Compat)...");
@@ -818,12 +818,18 @@ function checkStreakUpdate() {
 
 // AI Integration Code
 async function analyzeWithAI(text, contextId) {
-    const apiKey = OPENAI_API_KEY;
-    
-    if (!apiKey || apiKey.length < 10) {
-        console.error("No se ha configurado una API Key de OpenAI válida.");
-        return;
+    if (!OPENAI_API_KEY || OPENAI_API_KEY.length < 10) {
+        const inputKey = prompt("Por favor ingresa tu API Key de OpenAI para usar las funciones de IA (se guardará solo en este dispositivo):");
+        if (inputKey && inputKey.length > 20) {
+            localStorage.setItem('dt_openai_key', inputKey);
+            OPENAI_API_KEY = inputKey;
+        } else {
+            alert("No se ingresó una clave válida. El análisis de IA no funcionará.");
+            return;
+        }
     }
+    
+    const apiKey = OPENAI_API_KEY;
 
     const loader = document.getElementById('aiLoading');
     const submitBtn = document.getElementById('aiSubmitBtn');
