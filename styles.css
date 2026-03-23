@@ -669,3 +669,33 @@ body {
     color: var(--red);
     border-color: var(--red);
 }
+
+.profile-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 4px;
+}
+
+.btn-reset {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #555;
+    padding: 6px 12px;
+    border-radius: 10px;
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-reset:hover {
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--red);
+    border-color: var(--red);
+}
+
+.empty-meal-text {
+    color: #888;
+    font-size: 0.9rem;
+    font-style: italic;
+    margin: 8px 0;
+}

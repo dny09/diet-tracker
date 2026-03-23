@@ -9,8 +9,8 @@ const firebaseConfig = {
     measurementId: "G-N3JZH635CE"
 };
 
-// OpenAI Configuration (User Provided Key)
-const OPENAI_API_KEY = "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";
+// OpenAI Configuration (Will be stored only in User's Browser for Security)
+let OPENAI_API_KEY = localStorage.getItem('dt_openai_key') || "";
 
 // Initialize Firebase (Compat Mode)
 console.log("Iniciando Firebase (Compat)...");
@@ -44,8 +44,8 @@ const DEFAULT_MEALS = [
         id: 'desayuno',
         title: 'Desayuno',
         time: '7:00 a.m.',
-        itemsHtml: '3 huevos, 2 tortillas de maíz, verduras, 1 cdita aceite',
-        baseKcal: 480,
+        itemsHtml: '<p class="empty-meal-text">Aún no has registrado tu alimentación</p>',
+        baseKcal: 0,
         completed: false,
         selections: {},
         isCustom: false,
@@ -56,11 +56,8 @@ const DEFAULT_MEALS = [
         id: 'snack1',
         title: 'Snack 1',
         time: '10:00–10:30 a.m.',
-        itemsHtml: `
-            <div style="margin-bottom: 8px;">1 Manzana o yogur natural pequeño</div>
-            <div class="snack-warning">🟢 Guía visual: 1 porción ligera (~120 kcal)</div>
-        `,
-        baseKcal: 120,
+        itemsHtml: '<p class="empty-meal-text">Aún no has registrado tu alimentación</p>',
+        baseKcal: 0,
         completed: false,
         snackCount: 0,
         selections: {},
@@ -72,26 +69,10 @@ const DEFAULT_MEALS = [
         id: 'comida',
         title: 'Comida',
         time: '12:00–1:00 p.m.',
-        itemsHtml: `
-            <div class="food-item-row">
-                <select class="food-select" data-meal="comida" data-type="protein">
-                    <option value="pollo" selected>Pollo (150-200g)</option>
-                    <option value="res">Res (150g)</option>
-                    <option value="atun">Atún (1 lata)</option>
-                    <option value="huevo">Huevo (3 pzas)</option>
-                </select>
-            </div>
-            <div class="food-item-row">
-                <select class="food-select" data-meal="comida" data-type="carbs">
-                    <option value="arroz" selected>Arroz (1 taza)</option>
-                    <option value="tortillas">Tortillas (3 pzas)</option>
-                </select>
-            </div>
-            Verduras al gusto + Grasa saludable (Ej. 1/2 aguacate)
-        `,
-        baseKcal: 265,
+        itemsHtml: '<p class="empty-meal-text">Aún no has registrado tu alimentación</p>',
+        baseKcal: 0,
         completed: false,
-        selections: { protein: 'pollo', carbs: 'arroz' },
+        selections: {},
         isCustom: false,
         customText: '',
         customKcal: 0
@@ -100,11 +81,8 @@ const DEFAULT_MEALS = [
         id: 'snack2',
         title: 'Snack 2',
         time: '4:00–5:00 p.m.',
-        itemsHtml: `
-            <div style="margin-bottom: 8px;">30 g de pistaches (~45-50 piezas)</div>
-            <div class="snack-warning">🟢 Guía visual: un puñado pequeño</div>
-        `,
-        baseKcal: 160,
+        itemsHtml: '<p class="empty-meal-text">Aún no has registrado tu alimentación</p>',
+        baseKcal: 0,
         completed: false,
         snackCount: 0,
         selections: {},
@@ -116,20 +94,10 @@ const DEFAULT_MEALS = [
         id: 'cena',
         title: 'Cena',
         time: '7:30–8:30 p.m.',
-        itemsHtml: `
-            2 tacos de maíz + 1/2 aguacate +
-            <div class="food-item-row" style="margin-top: 8px;">
-                <select class="food-select" data-meal="cena" data-type="cheese">
-                    <option value="oaxaca" selected>Queso Oaxaca (50g)</option>
-                    <option value="panela">Queso Panela (50g)</option>
-                    <option value="fresco">Queso Fresco (50g)</option>
-                    <option value="cheddar">Queso Cheddar (40g)</option>
-                </select>
-            </div>
-        `,
-        baseKcal: 224,
+        itemsHtml: '<p class="empty-meal-text">Aún no has registrado tu alimentación</p>',
+        baseKcal: 0,
         completed: false,
-        selections: { cheese: 'oaxaca' },
+        selections: {},
         isCustom: false,
         customText: '',
         customKcal: 0
@@ -208,11 +176,37 @@ function initAuth() {
     document.getElementById('logoutBtn').addEventListener('click', async () => {
         if (confirm("¿Estás seguro de que deseas cerrar sesión?")) {
             try {
+                // Remove user-specific session data but KEEP the OpenAI API Key
+                localStorage.removeItem('dt_user');
+                localStorage.removeItem('dt_weightLog');
+                localStorage.removeItem('dt_history');
+                
                 await auth.signOut();
-                localStorage.clear(); // Optional: clear local too on logout
                 location.reload();
             } catch (error) {
                 console.error("Error signing out:", error);
+            }
+        }
+    });
+
+    document.getElementById('resetDataBtn').addEventListener('click', async () => {
+        const confirm1 = confirm("⚠️ ¿ESTÁS SEGURO? Esto borrará TODO TU HISTORIAL de la nube y de este dispositivo de forma permanente.");
+        if (confirm1) {
+            const confirm2 = confirm("🔥 ÚLTIMA ADVERTENCIA: No hay vuelta atrás. ¿Realmente quieres borrar todos tus datos?");
+            if (confirm2) {
+                try {
+                    // 1. Clear Firestore
+                    if (appState.user && appState.user.uid) {
+                        await db.collection("users").doc(appState.user.uid).delete();
+                    }
+                    // 2. Clear LocalStorage
+                    localStorage.clear();
+                    alert("Todos tus datos han sido eliminados. La página se reiniciará.");
+                    location.reload();
+                } catch (error) {
+                    console.error("Error deleting data:", error);
+                    alert("Hubo un error al borrar los datos de la nube.");
+                }
             }
         }
     });
@@ -818,12 +812,18 @@ function checkStreakUpdate() {
 
 // AI Integration Code
 async function analyzeWithAI(text, contextId) {
-    const apiKey = OPENAI_API_KEY;
-    
-    if (!apiKey || apiKey.length < 10) {
-        console.error("No se ha configurado una API Key de OpenAI válida.");
-        return;
+    if (!OPENAI_API_KEY || OPENAI_API_KEY.length < 10) {
+        const inputKey = prompt("Por favor ingresa tu API Key de OpenAI para usar las funciones de IA (se guardará solo en este dispositivo):");
+        if (inputKey && inputKey.length > 20) {
+            localStorage.setItem('dt_openai_key', inputKey);
+            OPENAI_API_KEY = inputKey;
+        } else {
+            alert("No se ingresó una clave válida. El análisis de IA no funcionará.");
+            return;
+        }
     }
+    
+    const apiKey = OPENAI_API_KEY;
 
     const loader = document.getElementById('aiLoading');
     const submitBtn = document.getElementById('aiSubmitBtn');
