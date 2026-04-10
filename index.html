@@ -1,12 +1,13 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Daily Tracker</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
-    
+
     <!-- Firebase Compat SDK (Universal support) -->
     <script src="https://www.gstatic.com/firebasejs/11.0.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.0.1/firebase-auth-compat.js"></script>
@@ -14,6 +15,7 @@
 
     <script>console.log("HTML cargado, Firebase Scripts inyectados...");</script>
 </head>
+
 <body>
     <!-- Auth/Registration Screen -->
     <div class="auth-container" id="authContainer">
@@ -21,17 +23,33 @@
             <div class="auth-icon">🥗</div>
             <h2>Bienvenido</h2>
             <p>Crea tu perfil local para comenzar tu seguimiento diario de forma privada.</p>
-            
+
             <div class="form-group">
-                <label for="regName">¿Cómo te llamas?</label>
-                <input type="text" id="regName" placeholder="Tu nombre" autocomplete="off">
+                <label for="regName">Nombres</label>
+                <input type="text" id="regName" placeholder="Tus nombres" autocomplete="off">
             </div>
-            
+
+            <div class="form-group">
+                <label for="regLastName">Apellidos</label>
+                <input type="text" id="regLastName" placeholder="Tus apellidos" autocomplete="off">
+            </div>
+
+            <div style="display: flex; gap: 12px;">
+                <div class="form-group" style="flex: 1;">
+                    <label for="regAge">Edad</label>
+                    <input type="number" id="regAge" placeholder="Ej: 25">
+                </div>
+                <div class="form-group" style="flex: 1;">
+                    <label for="regHeight">Estatura (m)</label>
+                    <input type="number" id="regHeight" placeholder="Ej: 1.75" step="0.01">
+                </div>
+            </div>
+
             <div class="form-group">
                 <label for="regWeight">Peso Actual (kg)</label>
                 <input type="number" id="regWeight" placeholder="Ej: 130" step="0.1">
             </div>
-            
+
             <button id="registerBtn" class="btn-primary">Comenzar mi plan</button>
 
             <div class="auth-divider">
@@ -52,19 +70,166 @@
                 <h1 class="date-display" id="historyGreeting">Historial</h1>
                 <p class="streak-display">Registros por día/mes/año</p>
             </div>
-            <div style="display: flex; align-items: center; gap: 8px;">
-                <button id="resetDataBtn" class="btn-reset" title="Borrar toda la cuenta local y nube">Borrar todo 🪠</button>
-                <button id="logoutBtn" class="btn-logout" title="Cerrar Sesión">Salir 🚪</button>
-                <div class="profile-pic" id="historyProfilePic">D</div>
+            <!-- Profile button triggers dropdown -->
+            <div style="position: relative;">
+                <div class="profile-pic" id="historyProfilePic" style="cursor:pointer;">D</div>
+                <!-- Dropdown menu -->
+                <div class="profile-dropdown" id="profileDropdown">
+                    <div id="profileSummary" class="profile-summary">
+                        <!-- Stats injected via JS (Names, LastNames, Age, Weight, BMI, Water) -->
+                    </div>
+                    <div class="profile-menu-divider"></div>
+                    <button class="profile-menu-item" id="editProfileBtn">
+                        <span>👤</span> Editar Perfil
+                    </button>
+                    <button class="profile-menu-item" id="menuFoodsBtn">
+                        <span>🥤</span> Mis Alimentos
+                    </button>
+                    <div class="profile-menu-divider"></div>
+                    <button class="profile-menu-item" id="logoutBtn">
+                        <span>🚪</span> Cerrar Sesión
+                    </button>
+                    <button class="profile-menu-item danger" id="resetDataBtn">
+                        <span>🪠</span> Borrar todo
+                    </button>
+                </div>
             </div>
         </header>
-        
+
+        <!-- History Period Filter -->
+        <div class="period-filter">
+            <button class="filter-btn active" data-period="day">Día</button>
+            <button class="filter-btn" data-period="week">Semana</button>
+            <button class="filter-btn" data-period="month">Mes</button>
+            <button class="filter-btn" data-period="year">Año</button>
+        </div>
+
+        <!-- Diary list — shown directly, no tabs -->
         <div class="history-list" id="historyList">
             <!-- Render history cards here via JS -->
         </div>
-        
-        <button id="newDayBtn" class="btn-primary" style="margin-top: auto;">+ Ver/Registrar Hoy</button>
+        <button id="newDayBtn" class="btn-primary" style="margin-top: 8px;">+ Ver/Registrar Hoy</button>
     </div>
+
+    <!-- Foods Catalog Screen (full overlay, accessed from profile menu) -->
+    <div class="foods-screen" id="foodsScreen" style="display:none;">
+        <header class="top-bar">
+            <div style="display:flex; align-items:center; gap:12px;">
+                <button id="backFromFoodsBtn" class="back-btn">← Volver</button>
+                <h1 class="date-display" style="margin-top:0;">Mis Alimentos</h1>
+            </div>
+        </header>
+        <button id="addFoodBtn" class="btn-add-food">
+            <span style="font-size:22px;">+</span> Agregar Alimento
+        </button>
+        <div class="foods-grid" id="foodsGrid">
+            <!-- Food cards rendered via JS -->
+        </div>
+    </div>
+
+    <!-- Add/Edit Food Product Modal -->
+    <div class="modal" id="foodProductModal">
+        <div class="modal-content" style="max-width:420px; max-height:90vh; overflow-y:auto; text-align:left;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                <h3 id="foodModalTitle" style="font-size:20px;">➕ Nuevo Alimento</h3>
+                <button id="closeFoodModalBtn"
+                    style="background:none;border:none;color:var(--text-sec);font-size:24px;cursor:pointer;">✕</button>
+            </div>
+
+            <!-- Photo Upload / URL -->
+            <div class="food-photo-section">
+                <div class="food-photo-preview" id="foodPhotoPreview">
+                    <span id="foodPhotoPlaceholder">📷<br><small>Agregar foto</small></span>
+                    <img id="foodPhotoImg" src="" alt=""
+                        style="display:none;width:100%;height:100%;object-fit:cover;border-radius:16px;">
+                </div>
+                <input type="file" id="foodPhotoInput" accept="image/*" capture="environment" style="display:none;">
+            </div>
+            <!-- Photo source toggle -->
+            <div class="photo-source-toggle">
+                <button class="photo-source-btn active" id="photoSrcFile">📁 Subir archivo</button>
+                <button class="photo-source-btn" id="photoSrcUrl">🔗 URL</button>
+            </div>
+            <!-- URL input (hidden by default) -->
+            <div id="photoUrlGroup" style="display:none; margin-top:10px;">
+                <div style="display:flex; gap:8px;">
+                    <input type="url" id="foodPhotoUrl" placeholder="https://..."
+                        style="flex:1; background:rgba(0,0,0,0.3); border:1px solid var(--card-border); border-radius:12px; padding:12px 14px; color:white; font-size:14px; outline:none; font-family:inherit;">
+                    <button id="loadUrlBtn"
+                        style="background:var(--accent); color:white; border:none; border-radius:12px; padding:0 16px; font-weight:600; cursor:pointer; white-space:nowrap; font-family:inherit;">Cargar</button>
+                </div>
+            </div>
+
+            <!-- Name -->
+            <div class="form-group" style="margin-top:20px;">
+                <label for="foodName">Nombre del Producto</label>
+                <input type="text" id="foodName" placeholder="Ej: Barra de Proteína ONE">
+            </div>
+
+            <!-- Brand -->
+            <div class="form-group">
+                <label for="foodBrand">Marca <span
+                        style="color:var(--text-sec);font-weight:400;">(opcional)</span></label>
+                <input type="text" id="foodBrand" placeholder="Ej: Quest, Kirkland...">
+            </div>
+
+            <!-- Flavor -->
+            <div class="form-group">
+                <label for="foodFlavor">Sabor</label>
+                <input type="text" id="foodFlavor" placeholder="Ej: Chocolate Chip Cookie Dough">
+            </div>
+
+            <!-- Calories -->
+            <div class="form-group">
+                <label for="foodKcal">Calorías por porción (kcal) <span
+                        style="color:var(--text-sec);font-weight:400;">(opcional)</span></label>
+                <input type="number" id="foodKcal" placeholder="Ej: 210">
+            </div>
+
+            <!-- Macros (Protein & Sugar) -->
+            <div style="display:flex; gap:12px;">
+                <div class="form-group" style="flex:1;">
+                    <label for="foodProtein">Proteínas (g) <span
+                            style="color:var(--text-sec);font-weight:400;">(opcional)</span></label>
+                    <input type="number" id="foodProtein" placeholder="Ej: 20">
+                </div>
+                <div class="form-group" style="flex:1;">
+                    <label for="foodSugar">Azúcar (g) <span
+                            style="color:var(--text-sec);font-weight:400;">(opcional)</span></label>
+                    <input type="number" id="foodSugar" placeholder="Ej: 1">
+                </div>
+            </div>
+
+            <!-- Star Rating -->
+            <div class="form-group">
+                <label>¿Qué tanto te gusta?</label>
+                <div class="star-rating" id="starRating">
+                    <button class="star-btn" data-star="1">★</button>
+                    <button class="star-btn" data-star="2">★</button>
+                    <button class="star-btn" data-star="3">★</button>
+                    <button class="star-btn" data-star="4">★</button>
+                    <button class="star-btn" data-star="5">★</button>
+                </div>
+                <div class="rating-label" id="ratingLabel">Sin calificación</div>
+            </div>
+
+            <!-- Notes -->
+            <div class="form-group">
+                <label for="foodNotes">Notas <span
+                        style="color:var(--text-sec);font-weight:400;">(opcional)</span></label>
+                <textarea id="foodNotes" placeholder="¿Algo que quieras recordar sobre este producto?" rows="3"
+                    style="width:100%;background:rgba(0,0,0,0.3);border:1px solid var(--card-border);color:white;padding:12px;border-radius:12px;font-family:inherit;font-size:14px;outline:none;resize:none;"></textarea>
+            </div>
+
+            <div class="modal-buttons" style="margin-top:8px;">
+                <button id="deleteFoodBtn" class="btn-secondary"
+                    style="background:rgba(239,68,68,0.15);color:var(--red);border:1px solid rgba(239,68,68,0.3);display:none;">🗑️
+                    Eliminar</button>
+                <button id="saveFoodBtn" class="btn-primary">Guardar</button>
+            </div>
+        </div>
+    </div>
+
 
     <!-- Main Tracker App Screen -->
     <div class="app-container" id="appContainer" style="display: none;">
@@ -72,14 +237,23 @@
         <header class="top-bar">
             <div>
                 <button id="backToHistoryBtn" class="back-btn">← Volver al Historial</button>
-                <h1 class="date-display" id="dateDisplay" style="margin-top: 8px;">Hoy</h1>
-                <p class="streak-display">🔥 Racha: <span id="streakCount">0</span> días</p>
+                <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-top:8px;">
+                    <div>
+                        <h1 class="date-display" id="dateDisplay" style="margin-top:0;">Hoy</h1>
+                        <p class="streak-display">🔥 Racha: <span id="streakCount">0</span> días</p>
+                    </div>
+                    <div id="dailyBalanceBadge"
+                        style="display:none; padding:6px 12px; border-radius:12px; font-weight:700; font-size:13px; text-align:right;">
+                        --
+                    </div>
+                </div>
             </div>
         </header>
 
         <!-- Navigation Tabs -->
         <div class="tabs-container">
             <button class="tab-btn active" id="tabMeals">🍎 Alimentación</button>
+            <button class="tab-btn" id="tabWater">💧 Agua</button>
             <button class="tab-btn" id="tabExercise">🏃 Ejercicio</button>
             <button class="tab-btn" id="tabProgress">📈 Progreso</button>
         </div>
@@ -105,7 +279,32 @@
 
             <!-- Meals List -->
             <section class="meals-list" id="mealsList">
-                <!-- Meal templates rendered via JS -->
+            </section>
+        </div>
+
+        <!-- Water View -->
+        <div id="waterView" style="display: none; padding: 20px 0;">
+            <section class="progress-section"
+                style="text-align: center; max-width: 400px; margin: 0 auto; padding: 30px 20px;">
+                <h2 style="font-size: 24px; margin-bottom: 8px;">Consumo de Agua 💧</h2>
+                <p style="color: var(--text-sec); font-size: 14px; margin-bottom: 40px;">Registra tus vasos de agua
+                    (250ml c/u)</p>
+
+                <div
+                    style="font-size: 72px; font-weight: 800; color: var(--accent); line-height: 1; margin-bottom: 8px;">
+                    <span id="waterGlassCount">0</span>
+                </div>
+                <div
+                    style="font-size: 16px; color: var(--text-main); font-weight: 600; opacity: 0.8; margin-bottom: 40px;">
+                    Total: <span id="waterMlCount">0</span> ml
+                </div>
+
+                <div style="display: flex; gap: 24px; justify-content: center; align-items: center;">
+                    <button id="btnRemoveWater"
+                        style="background: rgba(255,255,255,0.1); border: none; color: white; border-radius: 50%; width: 64px; height: 64px; font-size: 32px; cursor: pointer; transition: transform 0.1s; display: flex; align-items: center; justify-content: center;">-</button>
+                    <button id="btnAddWater" class="btn-primary"
+                        style="border-radius: 50%; width: 84px; height: 84px; font-size: 40px; padding: 0; display: flex; align-items: center; justify-content: center; box-shadow: 0 8px 24px rgba(56, 185, 255, 0.4);">+</button>
+                </div>
             </section>
         </div>
 
@@ -116,12 +315,14 @@
                 <div class="burned-display">-<span id="totalBurnedDisplay">0</span> kcal</div>
                 <p style="color: var(--text-sec); font-size: 14px;">Tus actividades físicas de hoy</p>
             </section>
-            
+
             <div style="display: flex; gap: 12px; margin-bottom: 20px;">
-                <button id="aiExerciseBtn" class="btn-primary" style="flex: 1; font-size: 14px; padding: 12px;">✨ Registro con IA</button>
-                <button id="manualExBtn" class="btn-secondary" style="flex: 1; font-size: 14px; padding: 12px;">✍️ Registro Manual</button>
+                <button id="aiExerciseBtn" class="btn-primary" style="flex: 1; font-size: 14px; padding: 12px;">✨
+                    Registro con IA</button>
+                <button id="manualExBtn" class="btn-secondary" style="flex: 1; font-size: 14px; padding: 12px;">✍️
+                    Registro Manual</button>
             </div>
-            
+
             <section class="meals-list" id="exerciseList">
                 <!-- Exercises rendered via JS -->
             </section>
@@ -131,18 +332,19 @@
         <div id="progressView" style="display: none;">
             <section class="weight-section" style="margin-top: 0;">
                 <h2>Corte Semanal ⚖️</h2>
-                <p style="color: var(--text-sec); font-size: 14px; margin-bottom: 24px; line-height: 1.5;">Registra tu evolución física una vez a la semana (preferentemente los domingos por la noche).</p>
-                
+                <p style="color: var(--text-sec); font-size: 14px; margin-bottom: 24px; line-height: 1.5;">Registra tu
+                    evolución física una vez a la semana (preferentemente los domingos por la noche).</p>
+
                 <div class="form-group" style="margin-bottom: 16px;">
                     <label>Peso Corporal (kg)</label>
                     <input type="number" id="weightInput" placeholder="Ej: 129.5" step="0.1" style="margin-bottom: 0;">
                 </div>
-                
+
                 <div class="form-group" style="margin-bottom: 24px;">
                     <label>Cintura (cm) - Opcional</label>
                     <input type="number" id="waistInput" placeholder="Ej: 110" step="1" style="margin-bottom: 0;">
                 </div>
-                
+
                 <button id="saveWeightBtn" class="btn-primary" style="margin-bottom: 30px;">Guardar Registro</button>
 
                 <div class="chart-container" style="height: 280px;">
@@ -151,49 +353,117 @@
             </section>
         </div>
 
-        <!-- Snack Warning Modal -->
-        <div class="modal" id="snackWarningModal">
-            <div class="modal-content">
-                <div class="modal-icon">⚠️</div>
-                <h3>¡Atención con el Snack!</h3>
-                <p>Las porciones de snacks son guías calóricas cerradas. Evita consumir múltiples porciones para no exceder tus calorías del plan.</p>
-                <button id="closeModalBtn" class="btn-primary">Entendido</button>
+    </div>
+
+    <!-- Modals (Moved to top level for global visibility) -->
+    
+    <!-- Snack Warning Modal -->
+    <div class="modal" id="snackWarningModal">
+        <div class="modal-content">
+            <div class="modal-icon">⚠️</div>
+            <h3>¡Atención con el Snack!</h3>
+            <p>Las porciones de snacks son guías calóricas cerradas. Evita consumir múltiples porciones para no
+                exceder tus calorías del plan.</p>
+            <button id="closeModalBtn" class="btn-primary">Entendido</button>
+        </div>
+    </div>
+
+    <!-- Manual Exercise Modal -->
+    <div class="modal" id="manualExModal">
+        <div class="modal-content">
+            <div class="modal-icon">⌚</div>
+            <h3>Registro Manual</h3>
+            <p style="color: var(--text-sec); font-size: 15px; margin-bottom: 20px;">Ingresa la actividad y las
+                calorías exactas que quemaste.</p>
+
+            <div class="form-group" style="margin-bottom: 12px;">
+                <input type="text" id="manualExDesc" placeholder="Detalle (Ej: Caminata 4k)"
+                    style="margin-bottom: 0;">
+            </div>
+            <div class="form-group" style="margin-bottom: 20px;">
+                <input type="number" id="manualExKcal" placeholder="Kcal quemadas (Ej: 320)"
+                    style="margin-bottom: 0;">
+            </div>
+
+            <div class="modal-buttons">
+                <button id="manualExCancelBtn" class="btn-secondary">Cancelar</button>
+                <button id="manualExSubmitBtn" class="btn-primary">Guardar</button>
             </div>
         </div>
+    </div>
 
-        <!-- Manual Exercise Modal -->
-        <div class="modal" id="manualExModal">
-            <div class="modal-content">
-                <div class="modal-icon">⌚</div>
-                <h3>Registro Manual</h3>
-                <p style="color: var(--text-sec); font-size: 15px; margin-bottom: 20px;">Ingresa la actividad y las calorías exactas que quemaste.</p>
-                
-                <div class="form-group" style="margin-bottom: 12px;">
-                    <input type="text" id="manualExDesc" placeholder="Detalle (Ej: Caminata 4k)" style="margin-bottom: 0;">
-                </div>
-                <div class="form-group" style="margin-bottom: 20px;">
-                    <input type="number" id="manualExKcal" placeholder="Kcal quemadas (Ej: 320)" style="margin-bottom: 0;">
-                </div>
-                
-                <div class="modal-buttons">
-                    <button id="manualExCancelBtn" class="btn-secondary">Cancelar</button>
-                    <button id="manualExSubmitBtn" class="btn-primary">Guardar</button>
-                </div>
+    <!-- AI Input Modal -->
+    <div class="modal" id="aiModal">
+        <div class="modal-content">
+            <div class="modal-icon">✨</div>
+            <h3 id="aiModalTitle">Registro Inteligente</h3>
+            <p id="aiModalDesc" style="font-size:14px; margin-bottom:12px;">Escribe qué comiste y bebiste y la IA
+                evaluará todo. <br><small style="color:var(--yellow);">Nota: Aquí NO se registra ejercicio. Usa la
+                    pestaña Ejercicio.</small></p>
+            <textarea id="aiInput"
+                placeholder="Ej: Me comí 2 tacos con huevo con chorizo, 1 coca cola y 2 papitas individuales."
+                rows="4"
+                style="width:100%; background:rgba(0,0,0,0.3); border:1px solid var(--card-border); color:white; padding:12px; border-radius:12px; margin-bottom:12px; font-family:inherit;"></textarea>
+            <div id="aiLoading" class="ai-loading">Analizando con IA... ⏳</div>
+            <div class="modal-buttons">
+                <button id="aiCancelBtn" class="btn-secondary">Cancelar</button>
+                <button id="aiSubmitBtn" class="btn-primary">Calcular Kcal</button>
             </div>
         </div>
+    </div>
 
-        <!-- AI Input Modal -->
-        <div class="modal" id="aiModal">
-            <div class="modal-content">
-                <div class="modal-icon">✨</div>
-                <h3 id="aiModalTitle">Registro Inteligente</h3>
-                <p id="aiModalDesc">Escribe qué actividad o comida realizaste y ChatGPT la evaluará.</p>
-                <textarea id="aiInput" placeholder="Ej: Me comí 2 tamales o Caminé 30 minutos..." rows="4" style="width:100%; background:rgba(0,0,0,0.3); border:1px solid var(--card-border); color:white; padding:12px; border-radius:12px; margin-bottom:12px; font-family:inherit;"></textarea>
-                <div id="aiLoading" class="ai-loading">Analizando con ChatGPT... ⏳</div>
-                <div class="modal-buttons">
-                    <button id="aiCancelBtn" class="btn-secondary">Cancelar</button>
-                    <button id="aiSubmitBtn" class="btn-primary">Calcular Kcal</button>
+    <!-- Catalog Selection Modal -->
+    <div class="modal" id="catalogSelectionModal">
+        <div class="modal-content">
+            <div class="modal-icon">📓</div>
+            <h3>Mis Alimentos</h3>
+            <p style="font-size: 14px; color: var(--text-sec); margin-bottom: 16px;">Selecciona un alimento
+                precargado para agregarlo a este registro.</p>
+            <div id="catalogSelectionList"
+                style="max-height: 300px; overflow-y: auto; text-align: left; margin-bottom: 20px; display:flex; flex-direction:column; gap:8px;">
+                <!-- Foods rendered here -->
+            </div>
+            <div class="modal-buttons">
+                <button id="closeCatalogSelectBtn" class="btn-secondary">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Profile Edit Modal -->
+    <div class="modal" id="editProfileModal">
+        <div class="modal-content" style="max-width: 400px; text-align: left;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px;">
+                <h3 style="margin:0;">Editar Perfil</h3>
+                <button id="closeEditProfileBtn"
+                    style="background:none; border:none; color:var(--text-sec); font-size:20px; cursor:pointer;">✕</button>
+            </div>
+
+            <div class="form-group">
+                <label>Nombre(s)</label>
+                <input type="text" id="editName">
+            </div>
+            <div class="form-group">
+                <label>Apellidos</label>
+                <input type="text" id="editLastName">
+            </div>
+            <div style="display: flex; gap: 12px;">
+                <div class="form-group" style="flex: 1;">
+                    <label>Edad</label>
+                    <input type="number" id="editAge">
                 </div>
+                <div class="form-group" style="flex: 1;">
+                    <label>Estatura (m)</label>
+                    <input type="number" id="editHeight" step="0.01">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Peso Actual (kg)</label>
+                <input type="number" id="editWeight" step="0.1">
+            </div>
+
+            <div class="modal-buttons" style="margin-top: 10px;">
+                <button id="saveProfileBtn" class="btn-primary" style="width: 100%;">Guardar Cambios</button>
             </div>
         </div>
     </div>
@@ -202,4 +472,5 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="app.js"></script>
 </body>
+
 </html>

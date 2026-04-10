@@ -164,6 +164,34 @@ body {
     line-height: 1.4;
 }
 
+/* ===== Period Filter ===== */
+.period-filter {
+    display: flex;
+    gap: 8px;
+    background: rgba(255,255,255,0.05);
+    padding: 6px;
+    border-radius: 12px;
+    margin-top: 10px;
+}
+.filter-btn {
+    flex: 1;
+    background: transparent;
+    color: var(--text-sec);
+    border: none;
+    padding: 8px 5px;
+    border-radius: 8px;
+    font-weight: 500;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: inherit;
+}
+.filter-btn.active {
+    background: rgba(255,255,255,0.1);
+    color: white;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
 /* History Dashboard Styles */
 .history-list {
     display: flex;
@@ -172,6 +200,7 @@ body {
     margin-top: 10px;
 }
 .history-card {
+    position: relative;
     background: var(--card-bg);
     border: 1px solid var(--card-border);
     border-radius: 16px;
@@ -199,6 +228,36 @@ body {
 .history-pct.green { color: var(--green); }
 .history-pct.yellow { color: var(--yellow); }
 .history-pct.red { color: var(--red); }
+
+.delete-day-btn {
+    display: none;
+    position: absolute;
+    top: -12px;
+    right: -12px;
+    background: var(--card-bg);
+    border: 1px solid rgba(239, 68, 68, 0.5);
+    color: var(--red);
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    cursor: pointer;
+    font-size: 16px;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+    z-index: 10;
+    transition: transform 0.1s, background 0.2s;
+}
+.delete-day-btn:hover {
+    background: rgba(239, 68, 68, 0.15);
+}
+.delete-day-btn:active {
+    transform: scale(0.9);
+}
+.history-card:hover .delete-day-btn {
+    display: flex;
+}
+
 
 /* Header */
 .top-bar {
@@ -231,6 +290,100 @@ body {
     box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
     text-transform: uppercase;
 }
+
+/* Profile Dropdown */
+.profile-dropdown {
+    position: absolute;
+    top: 55px;
+    right: 0;
+    width: 260px;
+    background: #1c1c21;
+    border: 1px solid var(--card-border);
+    border-radius: 20px;
+    padding: 12px;
+    display: none;
+    flex-direction: column;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    z-index: 1000;
+}
+.profile-dropdown.show {
+    display: flex;
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0) scale(1);
+}
+.profile-summary {
+    background: rgba(255,255,255,0.03);
+    border-radius: 14px;
+    padding: 16px;
+    margin-bottom: 8px;
+}
+.summary-name {
+    font-size: 16px;
+    font-weight: 700;
+    color: white;
+    margin-bottom: 2px;
+}
+.summary-lastname {
+    font-size: 14px;
+    color: var(--text-sec);
+    margin-bottom: 12px;
+    font-weight: 500;
+}
+.summary-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+}
+.summary-item {
+    background: rgba(0,0,0,0.2);
+    padding: 10px;
+    border-radius: 10px;
+    text-align: center;
+}
+.summary-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    color: var(--text-sec);
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+}
+.summary-value {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--accent);
+}
+.summary-value.water {
+    color: #38bdf8;
+}
+.profile-menu-item {
+    background: transparent;
+    border: none;
+    color: white;
+    padding: 12px;
+    text-align: left;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    transition: background 0.2s;
+}
+.profile-menu-item:hover {
+    background: rgba(255,255,255,0.05);
+}
+.profile-menu-item.danger {
+    color: var(--red);
+}
+.profile-menu-divider {
+    height: 1px;
+    background: var(--card-border);
+    margin: 8px 0;
+}
+
 
 /* Progress Section */
 .progress-section {
@@ -698,4 +851,278 @@ body {
     font-size: 0.9rem;
     font-style: italic;
     margin: 8px 0;
+}
+
+/* ===== Profile Dropdown Menu ===== */
+.profile-dropdown {
+    position: absolute;
+    top: calc(100% + 10px);
+    right: 0;
+    background: #1e1e26;
+    border: 1px solid var(--card-border);
+    border-radius: 16px;
+    padding: 6px;
+    min-width: 200px;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.6);
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(-8px) scale(0.96);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    z-index: 200;
+}
+
+.profile-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    background: none;
+    border: none;
+    color: var(--text-primary);
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 500;
+    padding: 12px 14px;
+    border-radius: 10px;
+    cursor: pointer;
+    text-align: left;
+    transition: background 0.15s ease;
+}
+.profile-menu-item:hover {
+    background: rgba(255,255,255,0.07);
+}
+.profile-menu-item.danger {
+    color: var(--red);
+}
+.profile-menu-item.danger:hover {
+    background: rgba(239,68,68,0.1);
+}
+.profile-menu-divider {
+    height: 1px;
+    background: var(--card-border);
+    margin: 4px 6px;
+}
+
+/* ===== Foods Screen (full-page) ===== */
+.foods-screen {
+    width: 100%;
+    max-width: 480px;
+    padding: 20px;
+    padding-bottom: 60px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    min-height: 100vh;
+}
+
+
+/* ===== Add Food Button ===== */
+.btn-add-food {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+    padding: 16px;
+    background: rgba(99, 102, 241, 0.1);
+    border: 2px dashed rgba(99, 102, 241, 0.4);
+    color: var(--accent);
+    border-radius: 16px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.2s ease;
+    margin-bottom: 4px;
+}
+.btn-add-food:hover {
+    background: rgba(99, 102, 241, 0.2);
+    border-color: var(--accent);
+    transform: translateY(-1px);
+}
+.btn-add-food:active {
+    transform: scale(0.98);
+}
+
+/* ===== Foods Grid ===== */
+.foods-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-top: 8px;
+}
+.food-card {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 18px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.food-card:hover {
+    border-color: rgba(99, 102, 241, 0.4);
+    box-shadow: 0 4px 18px rgba(99, 102, 241, 0.12);
+}
+.food-card:active {
+    transform: scale(0.97);
+}
+.food-card-photo {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    background: rgba(255,255,255,0.04);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 46px;
+    overflow: hidden;
+}
+.food-card-photo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.food-card-body {
+    padding: 12px;
+}
+.food-card-name {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 2px;
+}
+.food-card-brand {
+    font-size: 11px;
+    color: var(--text-sec);
+    margin-bottom: 6px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.food-card-flavor {
+    font-size: 12px;
+    color: var(--accent);
+    margin-bottom: 6px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.food-card-stars {
+    font-size: 13px;
+    color: #F59E0B;
+    letter-spacing: 1px;
+}
+.food-card-kcal {
+    font-size: 11px;
+    color: var(--text-sec);
+    margin-top: 4px;
+}
+.foods-empty-state {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text-sec);
+}
+.foods-empty-state .empty-icon {
+    font-size: 52px;
+    margin-bottom: 12px;
+}
+.foods-empty-state p {
+    font-size: 15px;
+    line-height: 1.5;
+}
+
+/* ===== Food Product Modal — Photo ===== */
+.food-photo-section {
+    display: flex;
+    justify-content: center;
+}
+.food-photo-preview {
+    width: 160px;
+    height: 160px;
+    border-radius: 18px;
+    border: 2px dashed rgba(99, 102, 241, 0.4);
+    background: rgba(99, 102, 241, 0.06);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    cursor: pointer;
+    color: var(--text-sec);
+    font-size: 28px;
+    overflow: hidden;
+    transition: all 0.2s ease;
+    position: relative;
+}
+.food-photo-preview:hover {
+    border-color: var(--accent);
+    background: rgba(99, 102, 241, 0.12);
+}
+.food-photo-preview:active {
+    transform: scale(0.97);
+}
+.food-photo-preview small {
+    display: block;
+    font-size: 11px;
+    margin-top: 6px;
+    color: var(--text-sec);
+}
+
+/* ===== Photo Source Toggle ===== */
+.photo-source-toggle {
+    display: flex;
+    gap: 6px;
+    margin-top: 10px;
+    background: rgba(255,255,255,0.05);
+    padding: 4px;
+    border-radius: 10px;
+}
+.photo-source-btn {
+    flex: 1;
+    background: transparent;
+    color: var(--text-sec);
+    border: none;
+    padding: 8px 10px;
+    border-radius: 7px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.2s ease;
+}
+.photo-source-btn.active {
+    background: rgba(255,255,255,0.1);
+    color: white;
+}
+
+/* ===== Star Rating Widget ===== */
+.star-rating {
+    display: flex;
+    gap: 6px;
+    margin-top: 8px;
+    margin-bottom: 6px;
+}
+.star-btn {
+    background: none;
+    border: none;
+    font-size: 30px;
+    color: rgba(255,255,255,0.15);
+    cursor: pointer;
+    transition: color 0.15s ease, transform 0.1s ease;
+    padding: 0;
+    line-height: 1;
+}
+.star-btn:hover,
+.star-btn.active {
+    color: #F59E0B;
+}
+.star-btn:active {
+    transform: scale(1.2);
+}
+.rating-label {
+    font-size: 13px;
+    color: var(--text-sec);
+    font-style: italic;
 }
